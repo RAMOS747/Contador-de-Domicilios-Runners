@@ -108,13 +108,13 @@
   .resumen-row.ganado .v{ color: var(--violet); }
 
   /* ---------- Toggle Dia/Semana ---------- */
-  .toggle-vista{ display:flex; flex-direction:column; gap: 8px; }
+  .toggle-vista{ display:flex; }
   .toggle-vista button{
-    padding: 12px; border-radius: 999px; border: none; cursor:pointer;
-    font-size: 15px; font-weight: 700;
+    width: 100%; padding: 12px; border-radius: 999px; border: 1px solid var(--line); cursor:pointer;
+    font-size: 14px; font-weight: 700; background: var(--panel-2); color: var(--text-dim);
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
   }
-  .toggle-vista button.dia{ background: var(--green); color: #06210f; }
-  .toggle-vista button.semana{ background: var(--panel-2); color: var(--text-dim); border: 1px solid var(--line); }
+  .toggle-vista button.semana.active{ background: var(--green); color: #06210f; border-color: var(--green); }
 
   /* ---------- Selector de dias ---------- */
   .day-pills{
@@ -129,7 +129,10 @@
   .day-pill .dp-mes{ font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .03em; }
   .day-pill.active{ background: var(--green); color: #06210f; border-color: var(--green); }
   .day-pill.active .dp-mes{ color: #0a3319; }
-  .day-pill.today-marker .dp-top::after{ content: "•"; margin-left: 3px; }
+  .day-pill.today-marker{ background: #000000; border-color: #000000; }
+  .day-pill.today-marker .dp-mes{ color: var(--text-dim); }
+  .day-pill.active.today-marker{ background: var(--green); border-color: var(--green); color: #06210f; }
+  .day-pill.active.today-marker .dp-mes{ color: #0a3319; }
 
   /* ---------- Nuevo domicilio ---------- */
   .card{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
@@ -192,8 +195,10 @@
     position: relative;
   }
   .modal h3{ margin: 0 0 4px; font-size: 18px; }
-  .modal-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; }
-  .modal-top button{ background:none; border:none; color: var(--text-dim); font-size: 22px; cursor:pointer; }
+  .modal-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 16px; gap: 10px; }
+  .modal-top button{ background:none; border:none; color: var(--text-dim); font-size: 22px; cursor:pointer; flex-shrink:0; }
+  #tituloModalSemana{ font-size: 16px; line-height: 1.4; }
+  #tituloModalSemana b{ color: var(--green); }
 
   .saldo-box{ text-align:center; padding: 20px 0 8px; }
   .saldo-box .monto{ font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -221,12 +226,16 @@
   }
 
   .toast{
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
-    padding: 12px 20px; border-radius: 999px; font-size: 13px; z-index: 200;
-    opacity:0; pointer-events:none; transition: opacity .25s ease;
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(.9);
+    background: var(--violet); color: #fff;
+    padding: 22px 28px; border-radius: 20px; font-size: 18px; font-weight: 700;
+    text-align: center; line-height: 1.35; z-index: 200; max-width: 80vw;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    opacity:0; pointer-events:none; transition: opacity .18s ease, transform .18s ease;
   }
-  .toast.show{ opacity:1; }
+  .toast.show{ opacity:1; transform: translate(-50%, -50%) scale(1); }
+  .toast .t-linea{ display:block; }
+  .toast .t-ok{ display:block; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -271,8 +280,7 @@
     <div class="right-col">
       <div class="domis-count"><span id="domisCount">0</span> Domis</div>
       <div class="toggle-vista">
-        <button class="dia" id="btnDia">Día</button>
-        <button class="semana" id="btnSemana">Semana</button>
+        <button class="semana" id="btnSemana">Resumen semanal</button>
       </div>
     </div>
   </div>
@@ -299,8 +307,8 @@
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Comentario</label>
-        <input type="text" id="comentario" placeholder="Ej: Son y fogón">
+        <label>Comentario "Opcional"</label>
+        <input type="text" id="comentario" placeholder="Ej: K 13.4.35">
       </div>
     </div>
 
@@ -317,7 +325,7 @@
 <!-- MODAL SEMANA -->
 <div class="modal-overlay" id="modalSemana">
   <div class="modal">
-    <div class="modal-top"><h3>Resumen de la semana</h3><button class="close" data-close="modalSemana">✕</button></div>
+    <div class="modal-top"><h3 id="tituloModalSemana">Resumen semanal</h3><button class="close" data-close="modalSemana">✕</button></div>
     <div class="saldo-box">
       <div class="monto" id="saldoMonto">$0</div>
       <div class="desc" id="saldoDesc">—</div>
@@ -353,6 +361,7 @@
 <div class="modal-overlay" id="modalHelp">
   <div class="modal">
     <div class="modal-top"><h3>Ayuda</h3><button class="close" data-close="modalHelp">✕</button></div>
+    <div class="help-item"><div class="t">Si no llevas tus cuentas, trabajas a ciegas.</div><div class="d">Cada domicilio que no registras es un peso que se pierde de tu control. No sabes si te deben, si debes, ni cuánto ganaste realmente hasta que ya es tarde para reclamar.Llevar tu registro al día no es papeleo, es tu respaldo. Es la diferencia entre confiar en tu memoria y tener la prueba en la mano cuando algo no cuadra.Tu trabajo, tus cuentas, tu control..</div></div>
     <div class="help-item"><div class="t">Efectivo</div><div class="d">El cliente te paga a ti en efectivo. Ese dinero se queda contigo, pero le debes a la empresa su porcentaje.</div></div>
     <div class="help-item"><div class="t">Transferencia</div><div class="d">El cliente le paga a la empresa. Ella te debe tu porcentaje del domicilio, más el 100% del "Valor Producto" que registres, porque ese dinero es tuyo.</div></div>
     <div class="help-item"><div class="t">Extra</div><div class="d">Dinero que la empresa te pasa en efectivo cuando te quedas sin plata por tener muchas transferencias. No se le aplica porcentaje: simplemente se descuenta de lo que te deben (o se suma a lo que debes).</div></div>
@@ -413,12 +422,18 @@
   const DIA_ABR = ['L','M','X','J','V','S','D'];
   const DIA_NOMBRE = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
   const MES_ABR = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  const MES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-  function toast(msg){
+  function toast(linea1, linea2){
     const t = document.getElementById('toast');
-    t.textContent = msg;
+    if(linea2 !== undefined){
+      t.innerHTML = `<span class="t-linea">${linea1}</span><span class="t-ok">${linea2}</span>`;
+    } else {
+      t.textContent = linea1;
+    }
     t.classList.add('show');
-    setTimeout(()=> t.classList.remove('show'), 1800);
+    clearTimeout(t._timer);
+    t._timer = setTimeout(()=> t.classList.remove('show'), 800);
   }
 
   function initOnboarding(){
@@ -512,6 +527,7 @@
     const comentario = document.getElementById('comentario').value.trim();
 
     const datos = cargarEntradas();
+    const eraEdicion = !!editandoId;
     if(editandoId){
       const idx = datos.findIndex(d=>d.id === editandoId);
       if(idx > -1){
@@ -528,6 +544,12 @@
     document.getElementById('valorProducto').value = '';
     document.getElementById('comentario').value = '';
     renderAll();
+
+    const linea1 = fmt(valor) + (comentario ? ' ' + comentario : '');
+    toast(linea1, eraEdicion ? '¡ACTUALIZADO!' : '¡GUARDADO!');
+
+    // Mantiene el teclado abierto para seguir ingresando sin perder tiempo
+    valorInput.focus();
   });
 
   function editarItem(id){
@@ -610,7 +632,23 @@
     }).join('');
   }
 
+  function tituloSemana(offset){
+    const monday = mondayOfWeek(offset);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const diaNombre = DIA_NOMBRE[0].toLowerCase(); // siempre es lunes
+    const d1 = monday.getDate();
+    const d2 = sunday.getDate();
+    const m1 = MES_LARGO[monday.getMonth()];
+    const m2 = MES_LARGO[sunday.getMonth()];
+    if(m1 === m2){
+      return `Resumen semanal del <b>${diaNombre} ${d1}</b> al <b>${d2} de ${m2}</b>`;
+    }
+    return `Resumen semanal del <b>${diaNombre} ${d1} de ${m1}</b> al <b>${d2} de ${m2}</b>`;
+  }
+
   function renderModalSemana(){
+    document.getElementById('tituloModalSemana').innerHTML = tituloSemana(weekOffset);
     const dates = weekDates(weekOffset).map(toYMD);
     const datos = cargarEntradas().filter(e=>dates.includes(e.fecha));
     const c = calcularBloque(datos);
@@ -650,20 +688,25 @@
   });
   document.addEventListener('click', ()=> document.getElementById('menuDropdown').classList.remove('open'));
 
-  function openModal(id){ document.getElementById(id).classList.add('open'); }
-  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  function openModal(id){
+    document.getElementById(id).classList.add('open');
+    if(id === 'modalSemana') document.getElementById('btnSemana').classList.add('active');
+  }
+  function closeModal(id){
+    document.getElementById(id).classList.remove('open');
+    if(id === 'modalSemana') document.getElementById('btnSemana').classList.remove('active');
+  }
   document.querySelectorAll('[data-close]').forEach(btn=>{
     btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
   });
   document.querySelectorAll('.modal-overlay').forEach(ov=>{
-    ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
+    ov.addEventListener('click', (e)=>{ if(e.target === ov) closeModal(ov.id); });
   });
 
   document.getElementById('btnSemana').addEventListener('click', ()=>{
     renderModalSemana();
     openModal('modalSemana');
   });
-  document.getElementById('btnDia').addEventListener('click', ()=>{});
 
   document.getElementById('menuConfig').addEventListener('click', ()=>{
     document.getElementById('menuDropdown').classList.remove('open');
