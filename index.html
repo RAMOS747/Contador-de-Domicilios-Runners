@@ -346,7 +346,7 @@
   <div class="modal">
     <div class="modal-top"><h3>Configurar porcentaje</h3><button class="close" data-close="modalConfig">✕</button></div>
     <div class="config-field">
-      <label>Porcentaje de la empresa (%)</label>
+      <label>Porcentaje que le pertenece a la empresa Runners(%)</label>
       <input type="number" id="pctEmpresaInput" min="0" max="100">
       <div class="config-split">
         <span>Empresa: <b id="pctEmpresaShow">30%</b></span>
@@ -665,7 +665,7 @@
     } else {
       monto.textContent = fmt(Math.abs(c.saldo));
       monto.className = 'monto negativo';
-      desc.textContent = 'Le debes a la empresa';
+      desc.textContent = 'Le debes a la empresa de los Runners';
     }
     document.getElementById('semEfectivo').textContent = fmt(c.efectivo);
     document.getElementById('semTransfe').textContent = fmt(c.transfe);
