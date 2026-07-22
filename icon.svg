@@ -1,5 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg"
-     width="512" height="512"
-     viewBox="0 0 512 512">
-  <!-- trazados vectoriales del símbolo rojo -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+
+    <rect
+        width="100"
+        height="100"
+        rx="22"
+        fill="#14161c"/>
+
+    <g
+        fill="#E30613"
+        transform="translate(50 50) scale(0.065) translate(-512 -512)">
+
+        <!-- Aquí van los paths del logo -->
+
+    </g>
+
 </svg>
+
