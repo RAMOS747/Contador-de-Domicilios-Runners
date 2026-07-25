@@ -28,6 +28,9 @@
     --purple-x: #7c5cbf;
     --purple-x-dim: rgba(124,92,191,.15);
     --red: #d64c4c;
+    /* Color para "Horas laborales": dinero por horas trabajadas, deuda semanal de la empresa */
+    --amber: #e0a64c;
+    --amber-dim: rgba(224,166,76,.15);
     --radius: 16px;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -106,15 +109,20 @@
   .resumen-row.transfe .v{ color: var(--blue); }
   .resumen-row.realizo .v{ color: var(--text); }
   .resumen-row.ganado .v{ color: var(--violet); }
+  .resumen-row.horas .v{ color: var(--amber); } /* fila "Horas": dinero de horas laborales del período */
 
   /* ---------- Toggle Dia/Semana ---------- */
-  .toggle-vista{ display:flex; }
+  /* Contenedor de los 2 botones de acción bajo el conteo de domicilios:
+     "Resumen semanal" y "Horas laborales". Se apilan en columna. */
+  .toggle-vista{ display:flex; flex-direction: column; gap: 8px; }
   .toggle-vista button{
     width: 100%; padding: 12px; border-radius: 999px; border: 1px solid var(--line); cursor:pointer;
     font-size: 14px; font-weight: 700; background: var(--panel-2); color: var(--text-dim);
     transition: background .15s ease, color .15s ease, border-color .15s ease;
   }
   .toggle-vista button.semana.active{ background: var(--green); color: #06210f; border-color: var(--green); }
+  /* Resalta el botón "Horas laborales" cuando ya hay horas cargadas para el día seleccionado */
+  .toggle-vista button.horas.tiene-horas{ border-color: var(--amber); color: var(--amber); }
 
   /* ---------- Selector de dias ---------- */
   .day-pills{
@@ -275,12 +283,16 @@
       <div class="resumen-row efectivo"><span class="k">Efectivo:</span><span class="v" id="resEfectivo">$0</span></div>
       <div class="resumen-row transfe"><span class="k">Transfe:</span><span class="v" id="resTransfe">$0</span></div>
       <div class="resumen-row realizo"><span class="k">Realizó:</span><span class="v" id="resRealizo">$0</span></div>
+      <!-- Dinero generado por horas laborales del día (horas x precio hora). Se suma a "Ganado". -->
+      <div class="resumen-row horas"><span class="k">Horas:</span><span class="v" id="resHoras">$0</span></div>
       <div class="resumen-row ganado"><span class="k">Ganado:</span><span class="v" id="resGanado">$0</span></div>
     </div>
     <div class="right-col">
       <div class="domis-count"><span id="domisCount">0</span> Domis</div>
       <div class="toggle-vista">
         <button class="semana" id="btnSemana">Resumen semanal</button>
+        <!-- Abre el modal para registrar horas trabajadas y el precio por hora -->
+        <button class="horas" id="btnHoras">Horas laborales</button>
       </div>
     </div>
   </div>
@@ -336,6 +348,9 @@
       <div class="resumen-row"><span class="k">Producto (transf.):</span><span class="v" id="semProducto">$0</span></div>
       <div class="resumen-row"><span class="k">Extras recibidos:</span><span class="v" id="semExtra">$0</span></div>
       <div class="resumen-row realizo"><span class="k">Total realizado:</span><span class="v" id="semRealizo">$0</span></div>
+      <!-- Total de la semana por horas laborales (horas x precio hora). Es deuda de la empresa,
+           por eso también se incluye en el saldo mostrado arriba (saldoMonto) -->
+      <div class="resumen-row horas"><span class="k">Horas laborales:</span><span class="v" id="semHoras">$0</span></div>
       <div class="resumen-row ganado"><span class="k">Total ganado:</span><span class="v" id="semGanado">$0</span></div>
     </div>
   </div>
@@ -357,6 +372,32 @@
   </div>
 </div>
 
+<!-- MODAL HORAS LABORALES
+     Permite: 1) definir el precio por hora (valor general, aplica a todos los días)
+              2) registrar cuántas horas se trabajaron en el día seleccionado
+     El total (horas x precio) se guarda por día y se refleja en:
+       - Resumen del día  -> fila "Horas" y se suma a "Ganado"
+       - Resumen semanal  -> fila "Horas laborales", se suma a "Total ganado" y al saldo -->
+<div class="modal-overlay" id="modalHoras">
+  <div class="modal">
+    <div class="modal-top"><h3>Horas laborales</h3><button class="close" data-close="modalHoras">✕</button></div>
+    <div id="horasFecha" style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">—</div>
+    <div class="config-field">
+      <label>Precio por hora (COP)</label>
+      <input type="number" id="precioHoraInput" min="0" inputmode="numeric" placeholder="0">
+    </div>
+    <div class="config-field">
+      <label>Horas trabajadas este día</label>
+      <input type="number" id="horasInput" min="0" step="0.5" inputmode="decimal" placeholder="0">
+    </div>
+    <div class="config-split">
+      <span>Total del día:</span>
+      <span id="horasTotalShow"><b>$0</b></span>
+    </div>
+    <button class="config-save" id="btnGuardarHoras">Guardar horas</button>
+  </div>
+</div>
+
 <!-- MODAL AYUDA -->
 <div class="modal-overlay" id="modalHelp">
   <div class="modal">
@@ -367,6 +408,7 @@
     <div class="help-item"><div class="t">Extra</div><div class="d">Dinero que la empresa te pasa en efectivo cuando te quedas sin plata por tener muchas transferencias. No se le aplica porcentaje: simplemente se descuenta de lo que te deben (o se suma a lo que debes).</div></div>
     <div class="help-item"><div class="t">Realizó</div><div class="d">La suma total de domicilios (efectivo + transferencia) que hiciste en el dia o semana.</div></div>
     <div class="help-item"><div class="t">Ganado</div><div class="d">Lo que te corresponde según tu porcentaje, sobre el total realizado.</div></div>
+    <div class="help-item"><div class="t">Horas laborales</div><div class="d">Registra las horas que trabajaste ese día y define cuánto vale la hora. Ese dinero es una deuda que la empresa te paga al finalizar la semana, por eso se suma tanto al saldo semanal (lo que te debe la empresa) como al total ganado, en el resumen del día y en el semanal.</div></div>
     <div class="help-item"><div class="t">Día / Semana</div><div class="d">"Día" muestra el registro de la fecha seleccionada. "Semana" abre el balance completo: cuánto te debe la empresa o cuánto le debes tú.</div></div>
      <div class="help-item"><div class="t">Create BY</div><div class="d">Desarrollado por Santiago Ramos, cualquier inquietud, comentario o sugerencia. :   WPP 3233505687.</div></div>
   </div>
@@ -375,9 +417,14 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const KEY_ENTRIES = 'runners_entries_v1';
-  const KEY_NOMBRE = 'runners_nombre_v1';
-  const KEY_PCT = 'runners_pct_empresa_v1';
+  // ==========================================================================
+  // ALMACENAMIENTO (localStorage)
+  // ==========================================================================
+  const KEY_ENTRIES = 'runners_entries_v1';       // array de domicilios (efectivo/transferencia/extra)
+  const KEY_NOMBRE = 'runners_nombre_v1';         // nombre del domiciliario (onboarding)
+  const KEY_PCT = 'runners_pct_empresa_v1';       // % que se queda la empresa sobre lo "realizado"
+  const KEY_HORAS = 'runners_horas_v1';           // objeto { "YYYY-MM-DD": horasTrabajadas }
+  const KEY_PRECIO_HORA = 'runners_precio_hora_v1'; // valor único (COP) de la hora, aplica a todos los días
 
   let tipoSeleccionado = 'efectivo';
   let weekOffset = 0;
@@ -393,6 +440,35 @@
     return isNaN(v) ? 30 : v;
   }
   function fmt(n){ return '$' + Math.round(n || 0).toLocaleString('es-CO'); }
+
+  // ==========================================================================
+  // HORAS LABORALES
+  // Cada día puede tener un número de horas trabajadas (guardadas por fecha).
+  // El precio por hora es un valor único y general (se configura una vez y se
+  // reutiliza para todos los días, hasta que el usuario lo cambie).
+  // Dinero generado por horas = horas del día x precio por hora.
+  // ==========================================================================
+  function cargarHoras(){
+    try{ return JSON.parse(localStorage.getItem(KEY_HORAS)) || {}; }
+    catch(e){ return {}; }
+  }
+  function guardarHorasObj(obj){ localStorage.setItem(KEY_HORAS, JSON.stringify(obj)); }
+  function getPrecioHora(){
+    const v = parseFloat(localStorage.getItem(KEY_PRECIO_HORA));
+    return isNaN(v) ? 0 : v;
+  }
+  // Horas registradas para una fecha puntual (YYYY-MM-DD)
+  function horasDelDia(fecha){
+    const h = cargarHoras();
+    return h[fecha] || 0;
+  }
+  // Dinero ganado por horas en un solo día
+  function gananciaHorasDia(fecha){ return horasDelDia(fecha) * getPrecioHora(); }
+  // Suma de horas trabajadas dentro de una lista de fechas (usado para la semana)
+  function horasDeFechas(fechas){
+    const h = cargarHoras();
+    return fechas.reduce((s,f)=> s + (h[f] || 0), 0);
+  }
   function toYMD(d){
     const y = d.getFullYear();
     const m = String(d.getMonth()+1).padStart(2,'0');
@@ -579,6 +655,10 @@
   }
   window.eliminarItem = eliminarItem;
 
+  // ==========================================================================
+  // CÁLCULOS DE DOMICILIOS (efectivo / transferencia / extra)
+  // No incluye horas laborales: esas se calculan aparte y se suman en el render
+  // ==========================================================================
   function calcularBloque(entradas){
     const efectivo = entradas.filter(e=>e.tipo==='efectivo').reduce((s,e)=>s+e.valor,0);
     const transfe = entradas.filter(e=>e.tipo==='transferencia').reduce((s,e)=>s+e.valor,0);
@@ -597,11 +677,17 @@
   function renderResumenDia(){
     const datos = cargarEntradas().filter(e=>e.fecha === selectedDate);
     const c = calcularBloque(datos);
+    const gananciaHoras = gananciaHorasDia(selectedDate);
     document.getElementById('domisCount').textContent = datos.length;
     document.getElementById('resEfectivo').textContent = fmt(c.efectivo);
     document.getElementById('resTransfe').textContent = fmt(c.transfe);
     document.getElementById('resRealizo').textContent = fmt(c.realizo);
-    document.getElementById('resGanado').textContent = fmt(c.ganado);
+    document.getElementById('resHoras').textContent = fmt(gananciaHoras);
+    // "Ganado" del día = lo que corresponde por domicilios + lo generado por horas laborales
+    document.getElementById('resGanado').textContent = fmt(c.ganado + gananciaHoras);
+
+    // Resalta el botón "Horas laborales" si ya se cargaron horas para este día
+    document.getElementById('btnHoras').classList.toggle('tiene-horas', horasDelDia(selectedDate) > 0);
   }
 
   function renderLista(){
@@ -641,10 +727,12 @@
     const d2 = sunday.getDate();
     const m1 = MES_LARGO[monday.getMonth()];
     const m2 = MES_LARGO[sunday.getMonth()];
+    // El <br> fuerza el salto de línea entre "Resumen semanal del" y el rango de fechas.
+    // Si quieres que vuelva a ir todo en una sola línea, basta con borrar el <br>.
     if(m1 === m2){
-      return `Resumen semanal del <b>${diaNombre} ${d1}</b> al <b>${d2} de ${m2}</b>`;
+      return `Resumen semanal del<br><b>${diaNombre} ${d1}</b> al <b>${d2} de ${m2}</b>`;
     }
-    return `Resumen semanal del <b>${diaNombre} ${d1} de ${m1}</b> al <b>${d2} de ${m2}</b>`;
+    return `Resumen semanal del<br><b>${diaNombre} ${d1} de ${m1}</b> al <b>${d2} de ${m2}</b>`;
   }
 
   function renderModalSemana(){
@@ -652,18 +740,27 @@
     const dates = weekDates(weekOffset).map(toYMD);
     const datos = cargarEntradas().filter(e=>dates.includes(e.fecha));
     const c = calcularBloque(datos);
+
+    // Dinero de horas laborales de toda la semana (suma de horas de cada día x precio hora)
+    const horasSemana = horasDeFechas(dates);
+    const gananciaHorasSemana = horasSemana * getPrecioHora();
+
+    // El dinero de horas laborales es una deuda de la empresa que se salda junto con el resto
+    // de la semana, por eso se suma al saldo (no solo al "ganado").
+    const saldoTotal = c.saldo + gananciaHorasSemana;
+
     const monto = document.getElementById('saldoMonto');
     const desc = document.getElementById('saldoDesc');
-    if(Math.abs(c.saldo) < 1){
+    if(Math.abs(saldoTotal) < 1){
       monto.textContent = '$0';
       monto.className = 'monto';
       desc.textContent = 'Cuentas saldadas esta semana';
-    } else if(c.saldo > 0){
-      monto.textContent = fmt(c.saldo);
+    } else if(saldoTotal > 0){
+      monto.textContent = fmt(saldoTotal);
       monto.className = 'monto positivo';
       desc.textContent = 'La empresa de los Runners te debe';
     } else {
-      monto.textContent = fmt(Math.abs(c.saldo));
+      monto.textContent = fmt(Math.abs(saldoTotal));
       monto.className = 'monto negativo';
       desc.textContent = 'Le debes a la empresa de los Runners';
     }
@@ -672,7 +769,9 @@
     document.getElementById('semProducto').textContent = fmt(c.producto);
     document.getElementById('semExtra').textContent = fmt(c.extra);
     document.getElementById('semRealizo').textContent = fmt(c.realizo);
-    document.getElementById('semGanado').textContent = fmt(c.ganado);
+    document.getElementById('semHoras').textContent = fmt(gananciaHorasSemana);
+    // "Total ganado" semanal = lo que corresponde por domicilios + lo generado por horas laborales
+    document.getElementById('semGanado').textContent = fmt(c.ganado + gananciaHorasSemana);
   }
 
   function renderAll(){
@@ -706,6 +805,44 @@
   document.getElementById('btnSemana').addEventListener('click', ()=>{
     renderModalSemana();
     openModal('modalSemana');
+  });
+
+  // -------- Modal "Horas laborales" --------
+  // Recalcula el total mostrado (horas x precio) mientras el usuario escribe
+  function actualizarHorasTotalShow(){
+    const precio = parseFloat(document.getElementById('precioHoraInput').value) || 0;
+    const horas = parseFloat(document.getElementById('horasInput').value) || 0;
+    document.getElementById('horasTotalShow').innerHTML = `<b>${fmt(precio * horas)}</b>`;
+  }
+
+  document.getElementById('btnHoras').addEventListener('click', ()=>{
+    // Muestra a qué día corresponde lo que se está editando (siempre el día seleccionado arriba)
+    const d = new Date(selectedDate + 'T00:00:00');
+    const idx = (d.getDay()+6)%7;
+    document.getElementById('horasFecha').textContent =
+      `${DIA_NOMBRE[idx]} ${String(d.getDate()).padStart(2,'0')}-${MES_ABR[d.getMonth()]}-${String(d.getFullYear()).slice(2)}`;
+    // Precarga el precio hora guardado (general) y las horas ya cargadas para este día
+    document.getElementById('precioHoraInput').value = getPrecioHora() || '';
+    document.getElementById('horasInput').value = horasDelDia(selectedDate) || '';
+    actualizarHorasTotalShow();
+    openModal('modalHoras');
+  });
+  document.getElementById('precioHoraInput').addEventListener('input', actualizarHorasTotalShow);
+  document.getElementById('horasInput').addEventListener('input', actualizarHorasTotalShow);
+
+  document.getElementById('btnGuardarHoras').addEventListener('click', ()=>{
+    const precio = Math.max(0, parseFloat(document.getElementById('precioHoraInput').value) || 0);
+    const horas = Math.max(0, parseFloat(document.getElementById('horasInput').value) || 0);
+    // El precio por hora es global: se guarda una sola vez y aplica a todos los días
+    localStorage.setItem(KEY_PRECIO_HORA, precio);
+    // Las horas se guardan solo para el día seleccionado
+    const horasObj = cargarHoras();
+    if(horas > 0){ horasObj[selectedDate] = horas; }
+    else { delete horasObj[selectedDate]; } // si queda en 0, se limpia la entrada del día
+    guardarHorasObj(horasObj);
+    closeModal('modalHoras');
+    renderAll();
+    toast('Horas laborales actualizadas');
   });
 
   document.getElementById('menuConfig').addEventListener('click', ()=>{
