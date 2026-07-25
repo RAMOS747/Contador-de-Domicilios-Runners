@@ -310,11 +310,11 @@
     <div class="field-row" id="valorRow">
       <div class="field" id="valorField">
         <label id="valorLabel">Valor Domi</label>
-        <input type="number" id="valor" inputmode="numeric" placeholder="0">
+        <input type="text" id="valor" class="money-input" inputmode="numeric" placeholder="0">
       </div>
       <div class="field" id="productoField" style="display:none;">
         <label>Valor Producto</label>
-        <input type="number" id="valorProducto" inputmode="numeric" placeholder="0">
+        <input type="text" id="valorProducto" class="money-input" inputmode="numeric" placeholder="0">
       </div>
     </div>
     <div class="field-row">
@@ -361,11 +361,11 @@
   <div class="modal">
     <div class="modal-top"><h3>Configurar porcentaje</h3><button class="close" data-close="modalConfig">✕</button></div>
     <div class="config-field">
-      <label>Porcentaje que le pertenece a la empresa Runners(%)</label>
-      <input type="number" id="pctEmpresaInput" min="0" max="100">
+      <label>Porcentaje que le pertenece al domiciliario (%)</label>
+      <input type="number" id="pctWorkerInput" min="0" max="100">
       <div class="config-split">
-        <span>Empresa: <b id="pctEmpresaShow">30%</b></span>
         <span>Domiciliario: <b id="pctWorkerShow">70%</b></span>
+        <span>Empresa: <b id="pctEmpresaShow">30%</b></span>
       </div>
     </div>
     <button class="config-save" id="btnGuardarConfig">Guardar cambios</button>
@@ -384,7 +384,7 @@
     <div id="horasFecha" style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">—</div>
     <div class="config-field">
       <label>Precio por hora (COP)</label>
-      <input type="number" id="precioHoraInput" min="0" inputmode="numeric" placeholder="0">
+      <input type="text" id="precioHoraInput" class="money-input" inputmode="numeric" placeholder="0">
     </div>
     <div class="config-field">
       <label>Horas trabajadas este día</label>
@@ -440,6 +440,28 @@
     return isNaN(v) ? 30 : v;
   }
   function fmt(n){ return '$' + Math.round(n || 0).toLocaleString('es-CO'); }
+
+  // ==========================================================================
+  // FORMATEO EN VIVO DE CASILLAS DE DINERO
+  // Mientras el usuario escribe en un campo de dinero (valor, valor producto,
+  // precio por hora), se le agrega el punto (.) de miles apenas el número
+  // supera las centenas, para dar la percepción de que ya va por miles.
+  // ==========================================================================
+  function parseMoney(str){
+    if(!str) return 0;
+    const digits = String(str).replace(/[^\d]/g, '');
+    return digits ? parseInt(digits, 10) : 0;
+  }
+  function formatMoneyInput(el){
+    const digits = el.value.replace(/[^\d]/g, '');
+    el.value = digits ? parseInt(digits, 10).toLocaleString('es-CO') : '';
+  }
+  function setMoneyValue(el, n){
+    el.value = n ? Math.round(n).toLocaleString('es-CO') : '';
+  }
+  document.querySelectorAll('.money-input').forEach(el=>{
+    el.addEventListener('input', ()=> formatMoneyInput(el));
+  });
 
   // ==========================================================================
   // HORAS LABORALES
@@ -592,14 +614,14 @@
 
   document.getElementById('btnGuardar').addEventListener('click', ()=>{
     const valorInput = document.getElementById('valor');
-    const valor = parseFloat(valorInput.value);
+    const valor = parseMoney(valorInput.value);
     if(!valor || valor <= 0){
       valorInput.focus();
       valorInput.style.borderColor = 'var(--red)';
       setTimeout(()=> valorInput.style.borderColor = '', 600);
       return;
     }
-    const valorProducto = tipoSeleccionado === 'transferencia' ? (parseFloat(document.getElementById('valorProducto').value) || 0) : 0;
+    const valorProducto = tipoSeleccionado === 'transferencia' ? parseMoney(document.getElementById('valorProducto').value) : 0;
     const comentario = document.getElementById('comentario').value.trim();
 
     const datos = cargarEntradas();
@@ -637,8 +659,8 @@
     tipoSeleccionado = item.tipo;
     document.getElementById('valorLabel').textContent = item.tipo === 'extra' ? 'Valor Extra' : 'Valor Domi';
     document.getElementById('productoField').style.display = item.tipo === 'transferencia' ? 'block' : 'none';
-    document.getElementById('valor').value = item.valor;
-    document.getElementById('valorProducto').value = item.valorProducto || '';
+    setMoneyValue(document.getElementById('valor'), item.valor);
+    setMoneyValue(document.getElementById('valorProducto'), item.valorProducto);
     document.getElementById('comentario').value = item.comentario || '';
     editandoId = id;
     document.getElementById('btnGuardar').textContent = 'GUARDAR CAMBIOS';
@@ -678,7 +700,10 @@
     const datos = cargarEntradas().filter(e=>e.fecha === selectedDate);
     const c = calcularBloque(datos);
     const gananciaHoras = gananciaHorasDia(selectedDate);
-    document.getElementById('domisCount').textContent = datos.length;
+    // El contador de domicilios NO incluye los "Extra": esos aparecen en la lista
+    // (Registro del día) pero no suman al conteo de domicilios de arriba.
+    const domisCount = datos.filter(e=>e.tipo !== 'extra').length;
+    document.getElementById('domisCount').textContent = domisCount;
     document.getElementById('resEfectivo').textContent = fmt(c.efectivo);
     document.getElementById('resTransfe').textContent = fmt(c.transfe);
     document.getElementById('resRealizo').textContent = fmt(c.realizo);
@@ -810,7 +835,7 @@
   // -------- Modal "Horas laborales" --------
   // Recalcula el total mostrado (horas x precio) mientras el usuario escribe
   function actualizarHorasTotalShow(){
-    const precio = parseFloat(document.getElementById('precioHoraInput').value) || 0;
+    const precio = parseMoney(document.getElementById('precioHoraInput').value);
     const horas = parseFloat(document.getElementById('horasInput').value) || 0;
     document.getElementById('horasTotalShow').innerHTML = `<b>${fmt(precio * horas)}</b>`;
   }
@@ -822,7 +847,7 @@
     document.getElementById('horasFecha').textContent =
       `${DIA_NOMBRE[idx]} ${String(d.getDate()).padStart(2,'0')}-${MES_ABR[d.getMonth()]}-${String(d.getFullYear()).slice(2)}`;
     // Precarga el precio hora guardado (general) y las horas ya cargadas para este día
-    document.getElementById('precioHoraInput').value = getPrecioHora() || '';
+    setMoneyValue(document.getElementById('precioHoraInput'), getPrecioHora());
     document.getElementById('horasInput').value = horasDelDia(selectedDate) || '';
     actualizarHorasTotalShow();
     openModal('modalHoras');
@@ -831,7 +856,7 @@
   document.getElementById('horasInput').addEventListener('input', actualizarHorasTotalShow);
 
   document.getElementById('btnGuardarHoras').addEventListener('click', ()=>{
-    const precio = Math.max(0, parseFloat(document.getElementById('precioHoraInput').value) || 0);
+    const precio = Math.max(0, parseMoney(document.getElementById('precioHoraInput').value));
     const horas = Math.max(0, parseFloat(document.getElementById('horasInput').value) || 0);
     // El precio por hora es global: se guarda una sola vez y aplica a todos los días
     localStorage.setItem(KEY_PRECIO_HORA, precio);
@@ -848,25 +873,29 @@
   document.getElementById('menuConfig').addEventListener('click', ()=>{
     document.getElementById('menuDropdown').classList.remove('open');
     const pct = getPctEmpresa();
-    document.getElementById('pctEmpresaInput').value = pct;
+    const pctWorker = 100 - pct;
+    document.getElementById('pctWorkerInput').value = pctWorker;
+    document.getElementById('pctWorkerShow').textContent = pctWorker + '%';
     document.getElementById('pctEmpresaShow').textContent = pct + '%';
-    document.getElementById('pctWorkerShow').textContent = (100-pct) + '%';
     openModal('modalConfig');
   });
   document.getElementById('menuHelp').addEventListener('click', ()=>{
     document.getElementById('menuDropdown').classList.remove('open');
     openModal('modalHelp');
   });
-  document.getElementById('pctEmpresaInput').addEventListener('input', (e)=>{
+  document.getElementById('pctWorkerInput').addEventListener('input', (e)=>{
     let v = parseFloat(e.target.value);
     if(isNaN(v)) v = 0;
     v = Math.max(0, Math.min(100, v));
-    document.getElementById('pctEmpresaShow').textContent = v + '%';
-    document.getElementById('pctWorkerShow').textContent = (100-v) + '%';
+    document.getElementById('pctWorkerShow').textContent = v + '%';
+    document.getElementById('pctEmpresaShow').textContent = (100-v) + '%';
   });
   document.getElementById('btnGuardarConfig').addEventListener('click', ()=>{
-    const v = Math.max(0, Math.min(100, parseFloat(document.getElementById('pctEmpresaInput').value) || 0));
-    localStorage.setItem(KEY_PCT, v);
+    const vWorker = Math.max(0, Math.min(100, parseFloat(document.getElementById('pctWorkerInput').value) || 0));
+    // Internamente se sigue guardando el % de la empresa (KEY_PCT), ya que el resto
+    // de los cálculos (calcularBloque) trabaja con ese valor. Aquí solo se invierte
+    // la entrada visible: el usuario define el % del domiciliario.
+    localStorage.setItem(KEY_PCT, 100 - vWorker);
     closeModal('modalConfig');
     renderAll();
     toast('Porcentaje actualizado');
