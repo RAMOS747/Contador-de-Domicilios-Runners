@@ -28,6 +28,7 @@
     --purple-x: #7c5cbf;
     --purple-x-dim: rgba(124,92,191,.15);
     --red: #d64c4c;
+    --red-dim: rgba(214,76,76,.15);
     /* Color para "Horas laborales": dinero por horas trabajadas, deuda semanal de la empresa */
     --amber: #e0a64c;
     --amber-dim: rgba(224,166,76,.15);
@@ -67,10 +68,11 @@
 
   /* ---------- Header ---------- */
   header{ display:flex; justify-content: space-between; align-items:flex-start; margin-bottom: 18px; gap: 10px; }
+  .brand{ text-align: right; flex: 1; }
   .brand .logo{ font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
   .brand .logo span{ color: var(--violet); }
   .brand .user{ font-size: 14px; color: var(--text-dim); margin-top: 2px; }
-  .day-info{ text-align: right; flex: 1; }
+  .day-info{ text-align: left; }
   .day-info .dname{ font-size: 26px; font-weight: 800; line-height: 1.1; }
   .day-info .ddate{ font-size: 14px; color: var(--text-dim); margin-top: 2px; }
   .menu-wrap{ position: relative; flex-shrink: 0; }
@@ -106,10 +108,12 @@
   .resumen-row .k{ color: #d9dde4; font-weight: 700; }
   .resumen-row .v{ font-variant-numeric: tabular-nums; font-weight: 700; }
   .resumen-row.efectivo .v{ color: var(--green); }
-  .resumen-row.transfe .v{ color: var(--blue); }
+  #resEfectivo{ color: #fff; } /* Resumen del día: "Efectivo" en blanco (el semanal conserva el verde) */
+  .resumen-row.transfe .v{ color: var(--red); }
   .resumen-row.realizo .v{ color: var(--text); }
   .resumen-row.ganado .v{ color: var(--violet); }
-  .resumen-row.horas .v{ color: var(--amber); } /* fila "Horas": dinero de horas laborales del período */
+  .resumen-row.horas .v{ color: var(--blue); } /* fila "Horas": dinero de horas laborales del período */
+  .resumen-row.extra .v{ color: var(--blue); } /* fila "Extras": dinero recibido por extras */
 
   /* ---------- Toggle Dia/Semana ---------- */
   /* Contenedor de los 2 botones de acción bajo el conteo de domicilios:
@@ -137,10 +141,20 @@
   .day-pill .dp-mes{ font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .03em; }
   .day-pill.active{ background: var(--green); color: #06210f; border-color: var(--green); }
   .day-pill.active .dp-mes{ color: #0a3319; }
-  .day-pill.today-marker{ background: #000000; border-color: #000000; }
-  .day-pill.today-marker .dp-mes{ color: var(--text-dim); }
+  .day-pill.today-marker{ background: var(--violet); border-color: var(--violet); color: #fff; }
+  .day-pill.today-marker .dp-mes{ color: #e4d9ff; }
   .day-pill.active.today-marker{ background: var(--green); border-color: var(--green); color: #06210f; }
   .day-pill.active.today-marker .dp-mes{ color: #0a3319; }
+
+  /* Flechas para cambiar de semana en pantallas donde no se puede deslizar (PC) */
+  .week-nav{ display:flex; align-items:center; gap: 6px; margin-bottom: 14px; }
+  .week-nav-btn{
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--text); font-size: 16px; font-weight: 800; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .week-nav-btn:hover{ border-color: var(--violet); color: var(--violet); }
+  .week-nav .day-pills{ flex:1; margin-bottom: 0; }
 
   /* ---------- Nuevo domicilio ---------- */
   .card{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
@@ -151,9 +165,9 @@
     flex:1; padding: 11px 6px; border-radius: 10px; border: 1px solid var(--line);
     background: var(--panel-2); color: var(--text-dim); font-size: 13px; font-weight: 700; cursor:pointer;
   }
-  .tipo-toggle button.active[data-tipo="efectivo"]{ background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .tipo-toggle button.active[data-tipo="transferencia"]{ background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
-  .tipo-toggle button.active[data-tipo="extra"]{ background: var(--purple-x-dim); border-color: var(--purple-x); color: var(--purple-x); }
+  .tipo-toggle button.active[data-tipo="efectivo"]{ background: #eef0f3; border-color: #0b0c0f; color: #0b0c0f; }
+  .tipo-toggle button.active[data-tipo="transferencia"]{ background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .tipo-toggle button.active[data-tipo="extra"]{ background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
 
   .field-row{ display:flex; gap: 10px; margin-bottom: 12px; }
   .field{ flex:1; }
@@ -169,6 +183,10 @@
     background: var(--violet); color:#fff; font-size: 15px; font-weight: 800; letter-spacing: .02em;
   }
   .guardar-btn:active{ transform: scale(.98); }
+  /* Colores del botón "Guardar" según el tipo de domicilio seleccionado en el toggle */
+  .guardar-btn.tipo-efectivo{ background: #0b0c0f; border: 1px solid #3a3f4b; color:#fff; }
+  .guardar-btn.tipo-transferencia{ background: var(--red); color:#fff; }
+  .guardar-btn.tipo-extra{ background: var(--blue); color:#fff; }
 
   /* ---------- Lista ---------- */
   .item{
@@ -179,11 +197,15 @@
     width: 34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-weight: 800; font-size: 14px; flex-shrink:0; color:#fff;
   }
-  .badge.efectivo{ background: var(--green); }
-  .badge.transferencia{ background: var(--blue); }
-  .badge.extra{ background: var(--purple-x); }
+  /* Colores por tipo, iguales a la leyenda del PDF: Transferencia=rojo, Efectivo=negro, Extra=azul */
+  .badge.efectivo{ background: #0b0c0f; border: 1px solid #3a3f4b; }
+  .badge.transferencia{ background: var(--red); }
+  .badge.extra{ background: var(--blue); }
   .item .info{ flex:1; min-width:0; }
   .item .valor{ font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; }
+  .item .valor.tipo-transferencia{ color: var(--red); }
+  .item .valor.tipo-extra{ color: var(--blue); }
+  .item .valor.tipo-efectivo{ color: var(--text); }
   .item .sub{ color: var(--text-dim); font-size: 12px; margin-top: 1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .item .actions{ display:flex; gap: 4px; flex-shrink:0; }
   .item .actions button{ background:none; border:none; font-size: 16px; cursor:pointer; padding: 6px; }
@@ -244,6 +266,10 @@
   .toast.show{ opacity:1; transform: translate(-50%, -50%) scale(1); }
   .toast .t-linea{ display:block; }
   .toast .t-ok{ display:block; margin-top: 2px; }
+  /* Colores del mensaje de confirmación, según el tipo de domicilio guardado */
+  .toast.tipo-efectivo{ background: #0b0c0f; border: 1px solid #3a3f4b; color:#fff; }
+  .toast.tipo-transferencia{ background: var(--red); color:#fff; }
+  .toast.tipo-extra{ background: var(--blue); color:#fff; }
 </style>
 </head>
 <body>
@@ -261,22 +287,60 @@
 <div class="wrap">
 
   <header>
-    <div class="brand">
-      <div class="logo">Runners<span>.</span></div>
-      <div class="user" id="userName">—</div>
-    </div>
     <div class="day-info">
       <div class="dname" id="dayName">—</div>
       <div class="ddate" id="dayDate">—</div>
+    </div>
+    <div class="brand">
+      <div class="logo">Runners<span>.</span></div>
+      <div class="user" id="userName">—</div>
     </div>
     <div class="menu-wrap">
       <button class="menu-btn" id="menuBtn">⋮</button>
       <div class="menu-dropdown" id="menuDropdown">
         <button id="menuConfig">Configurar porcentaje</button>
+        <button id="menuPDF">Generar listado semanal PDF</button>
         <button id="menuHelp">Ayuda</button>
       </div>
     </div>
   </header>
+
+  <div class="week-nav">
+    <button type="button" class="week-nav-btn" id="btnSemAnterior" aria-label="Semana anterior">&laquo;</button>
+    <div class="day-pills" id="dayPills"></div>
+    <button type="button" class="week-nav-btn" id="btnSemSiguiente" aria-label="Semana siguiente">&raquo;</button>
+  </div>
+
+  <div class="card">
+    <h2>Nuevo domicilio</h2>
+
+    <div class="field-row" id="valorRow">
+      <div class="field" id="valorField">
+        <label id="valorLabel">Valor Domi</label>
+        <input type="text" id="valor" class="money-input" inputmode="numeric" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row" id="productoField" style="display:none;">
+      <div class="field">
+        <label>Valor Producto</label>
+        <input type="text" id="valorProducto" class="money-input" inputmode="numeric" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Comentario "Opcional"</label>
+        <input type="text" id="comentario" placeholder="Ej: Carrera 13.4.35">
+      </div>
+    </div>
+
+    <div class="tipo-toggle">
+      <button type="button" data-tipo="efectivo" class="active">Efectivo</button>
+      <button type="button" data-tipo="transferencia">Transferencia</button>
+      <button type="button" data-tipo="extra">Extra</button>
+    </div>
+
+    <button class="guardar-btn" id="btnGuardar">GUARDAR DOMICILIO</button>
+  </div>
 
   <div class="stats-row">
     <div class="resumen">
@@ -295,36 +359,6 @@
         <button class="horas" id="btnHoras">Horas laborales</button>
       </div>
     </div>
-  </div>
-
-  <div class="day-pills" id="dayPills"></div>
-
-  <div class="card">
-    <h2>Nuevo domicilio</h2>
-    <div class="tipo-toggle">
-      <button type="button" data-tipo="efectivo" class="active">Efectivo</button>
-      <button type="button" data-tipo="transferencia">Transferencia</button>
-      <button type="button" data-tipo="extra">Extra</button>
-    </div>
-
-    <div class="field-row" id="valorRow">
-      <div class="field" id="valorField">
-        <label id="valorLabel">Valor Domi</label>
-        <input type="text" id="valor" class="money-input" inputmode="numeric" placeholder="0">
-      </div>
-      <div class="field" id="productoField" style="display:none;">
-        <label>Valor Producto</label>
-        <input type="text" id="valorProducto" class="money-input" inputmode="numeric" placeholder="0">
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Comentario "Opcional"</label>
-        <input type="text" id="comentario" placeholder="Ej: Carrera 13.4.35">
-      </div>
-    </div>
-
-    <button class="guardar-btn" id="btnGuardar">GUARDAR DOMICILIO</button>
   </div>
 
   <div class="card">
@@ -346,7 +380,7 @@
       <div class="resumen-row efectivo"><span class="k">Efectivo cobrado:</span><span class="v" id="semEfectivo">$0</span></div>
       <div class="resumen-row transfe"><span class="k">Transferencias:</span><span class="v" id="semTransfe">$0</span></div>
       <div class="resumen-row"><span class="k">Producto (transf.):</span><span class="v" id="semProducto">$0</span></div>
-      <div class="resumen-row"><span class="k">Extras recibidos:</span><span class="v" id="semExtra">$0</span></div>
+      <div class="resumen-row extra"><span class="k">Extras recibidos:</span><span class="v" id="semExtra">$0</span></div>
       <div class="resumen-row realizo"><span class="k">Total realizado:</span><span class="v" id="semRealizo">$0</span></div>
       <!-- Total de la semana por horas laborales (horas x precio hora). Es deuda de la empresa,
            por eso también se incluye en el saldo mostrado arriba (saldoMonto) -->
@@ -416,6 +450,8 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Librería para generar el PDF del listado semanal, se ejecuta en el navegador del usuario -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   // ==========================================================================
   // ALMACENAMIENTO (localStorage)
@@ -522,13 +558,15 @@
   const MES_ABR = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
   const MES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-  function toast(linea1, linea2){
+  function toast(linea1, linea2, tipoColor){
     const t = document.getElementById('toast');
     if(linea2 !== undefined){
       t.innerHTML = `<span class="t-linea">${linea1}</span><span class="t-ok">${linea2}</span>`;
     } else {
       t.textContent = linea1;
     }
+    t.classList.remove('tipo-efectivo', 'tipo-transferencia', 'tipo-extra');
+    if(tipoColor){ t.classList.add('tipo-' + tipoColor); }
     t.classList.add('show');
     clearTimeout(t._timer);
     t._timer = setTimeout(()=> t.classList.remove('show'), 800);
@@ -589,6 +627,16 @@
     touchStartX = null;
   }, {passive:true});
 
+  // Flechas para cambiar de semana (útil en PC, donde no se puede deslizar)
+  document.getElementById('btnSemAnterior').addEventListener('click', ()=>{
+    weekOffset -= 1;
+    renderDayPills();
+  });
+  document.getElementById('btnSemSiguiente').addEventListener('click', ()=>{
+    weekOffset += 1;
+    renderDayPills();
+  });
+
   function renderHeaderDate(){
     const d = new Date(selectedDate + 'T00:00:00');
     const idx = (d.getDay()+6)%7;
@@ -607,8 +655,24 @@
       if(tipoSeleccionado === 'efectivo'){ valorLabel.textContent = 'Valor Domi'; productoField.style.display = 'none'; }
       else if(tipoSeleccionado === 'transferencia'){ valorLabel.textContent = 'Valor Domi'; productoField.style.display = 'block'; }
       else { valorLabel.textContent = 'Valor Extra'; productoField.style.display = 'none'; }
+      actualizarEstiloGuardar();
     });
   });
+
+  // Etiqueta del botón "Guardar" para cada tipo cuando se está creando un domicilio nuevo (no editando)
+  const TEXTO_GUARDAR = {
+    efectivo: 'GUARDAR DOMI EFECTIVO',
+    transferencia: 'GUARDAR DOMI TRANSFERENCIA',
+    extra: 'GUARDAR EXTRA',
+  };
+
+  // Sincroniza el color y el texto del botón "Guardar" con el tipo seleccionado en el toggle
+  function actualizarEstiloGuardar(){
+    const btn = document.getElementById('btnGuardar');
+    btn.classList.remove('tipo-efectivo', 'tipo-transferencia', 'tipo-extra');
+    btn.classList.add('tipo-' + tipoSeleccionado);
+    btn.textContent = editandoId ? 'GUARDAR CAMBIOS' : TEXTO_GUARDAR[tipoSeleccionado];
+  }
 
   let editandoId = null;
 
@@ -632,7 +696,7 @@
         datos[idx] = { ...datos[idx], tipo: tipoSeleccionado, valor, valorProducto, comentario };
       }
       editandoId = null;
-      document.getElementById('btnGuardar').textContent = 'GUARDAR DOMICILIO';
+      actualizarEstiloGuardar();
     } else {
       datos.unshift({ id: Date.now(), fecha: selectedDate, tipo: tipoSeleccionado, valor, valorProducto, comentario });
     }
@@ -644,7 +708,7 @@
     renderAll();
 
     const linea1 = fmt(valor) + (comentario ? ' ' + comentario : '');
-    toast(linea1, eraEdicion ? '¡ACTUALIZADO!' : '¡GUARDADO!');
+    toast(linea1, eraEdicion ? '¡ACTUALIZADO!' : '¡GUARDADO!', tipoSeleccionado);
 
     // Mantiene el teclado abierto para seguir ingresando sin perder tiempo
     valorInput.focus();
@@ -663,7 +727,7 @@
     setMoneyValue(document.getElementById('valorProducto'), item.valorProducto);
     document.getElementById('comentario').value = item.comentario || '';
     editandoId = id;
-    document.getElementById('btnGuardar').textContent = 'GUARDAR CAMBIOS';
+    actualizarEstiloGuardar();
     window.scrollTo({top: document.querySelector('.card').offsetTop - 10, behavior:'smooth'});
   }
   window.editarItem = editarItem;
@@ -672,7 +736,7 @@
     let datos = cargarEntradas();
     datos = datos.filter(d=>d.id !== id);
     guardarEntradas(datos);
-    if(editandoId === id){ editandoId = null; document.getElementById('btnGuardar').textContent = 'GUARDAR DOMICILIO'; }
+    if(editandoId === id){ editandoId = null; actualizarEstiloGuardar(); }
     renderAll();
   }
   window.eliminarItem = eliminarItem;
@@ -732,7 +796,7 @@
         <div class="item">
           <div class="badge ${d.tipo}">${letra[d.tipo]}</div>
           <div class="info">
-            <div class="valor">${fmt(d.valor)}</div>
+            <div class="valor tipo-${d.tipo}">${fmt(d.valor)}</div>
             <div class="sub">${sub || '&nbsp;'}</div>
           </div>
           <div class="actions">
@@ -901,8 +965,294 @@
     toast('Porcentaje actualizado');
   });
 
+  // ==========================================================================
+  // GENERAR LISTADO SEMANAL EN PDF
+  // Toma la semana actualmente posicionada (weekOffset, la misma que usa el
+  // "Resumen semanal") y arma un PDF día por día con:
+  //   - Tabla de domicilios (N° / Valor domi / Descripción)
+  //   - El resumen de ESE día (igual que el panel "Resumen" de la app)
+  // Y al terminar todos los días, el resumen semanal real (igual que el
+  // modal "Resumen semanal"): si la empresa te debe o tú le debes a ella.
+  // Colores de la tabla: Transferencia = rojo, Efectivo = negro, Extra = azul.
+  // Colores de los resúmenes: los mismos que usa la app (verde/azul/violeta/ámbar).
+  // ==========================================================================
+  function generarListadoPDF(){
+    if(!window.jspdf){
+      toast('No se pudo generar el PDF', 'Revisa tu conexión a internet');
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginX = 42;
+    const tableRight = pageW - marginX;
+    const colNW = 46;
+    const colN = marginX;
+    const colValor = colN + colNW, colValorW = 130;
+    const colDesc = colValor + colValorW, colDescW = tableRight - colDesc;
+
+    // Colores de tabla (según leyenda) y de la app (resúmenes)
+    const RED = [214,76,76], BLACK = [26,26,30], BLUE_TABLA = [76,134,214], GRAY = [139,145,160], DARK = [20,22,28];
+    const APP_GREEN = [63,174,110], APP_BLUE = [76,134,214], APP_VIOLET = [139,92,246], APP_AMBER = [224,166,76];
+
+    const nombre = localStorage.getItem(KEY_NOMBRE) || 'Runner';
+    const dates = weekDates(weekOffset);
+    const monday = dates[0], sunday = dates[6];
+    const fechasYMD = dates.map(toYMD);
+    const entradasSemana = cargarEntradas().filter(e => fechasYMD.includes(e.fecha));
+
+    // Mismo formato de fecha que usa la cabecera de la app (renderHeaderDate): DD-MES-AA
+    function fechaAppFormato(d){
+      return String(d.getDate()).padStart(2,'0') + '-' + MES_ABR[d.getMonth()] + '-' + String(d.getFullYear()).slice(2);
+    }
+
+    let y = 56;
+
+    function nuevaPagina(){ doc.addPage(); y = 56; }
+    function espacioDisponible(h){
+      if(y + h > pageH - 50){ nuevaPagina(); return true; }
+      return false;
+    }
+
+    // ---- Encabezado ----
+    doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(...DARK);
+    doc.text(`Hola, ${nombre}`, marginX, y);
+    y += 24;
+    doc.setFont('helvetica','normal'); doc.setFontSize(13); doc.setTextColor(...GRAY);
+    doc.text('Lista de domicilios', marginX, y);
+    y += 30;
+
+    const leyenda = [ ['Transferencia', RED], ['Efectivo', BLACK], ['Extra', BLUE_TABLA] ];
+    leyenda.forEach(([label, color])=>{
+      doc.setFillColor(...color);
+      doc.circle(marginX + 6, y - 4, 5.5, 'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...DARK);
+      doc.text(label, marginX + 18, y);
+      y += 19;
+    });
+    y += 14;
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(13); doc.setTextColor(...GRAY);
+    doc.text('semana:', marginX, y);
+    y += 19;
+    doc.setFont('helvetica','normal'); doc.setFontSize(14); doc.setTextColor(...DARK);
+    const semanaTxt = `Lunes ${monday.getDate()} de ${MES_LARGO[monday.getMonth()]} - domingo ${sunday.getDate()} de ${MES_LARGO[sunday.getMonth()]}`;
+    doc.text(semanaTxt, marginX, y);
+    y += 32;
+
+    // Dibuja el encabezado de la tabla con bordes completos (marco + divisores de columna),
+    // igual en cada página en la que continúe una tabla.
+    function dibujarEncabezadoTabla(){
+      const headerH = 24;
+      const top = y;
+      doc.setFillColor(232,233,237);
+      doc.rect(marginX, top, tableRight - marginX, headerH, 'F');
+      doc.setDrawColor(180,183,190); doc.setLineWidth(0.9);
+      doc.rect(marginX, top, tableRight - marginX, headerH, 'S');
+      doc.line(colValor, top, colValor, top + headerH);
+      doc.line(colDesc, top, colDesc, top + headerH);
+
+      const textY = top + headerH/2 + 3.5;
+      doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(...DARK);
+      doc.text('N°', colN + colNW/2, textY, { align:'center' });
+      doc.text('Valor domi', colValor + 8, textY);
+      doc.text('Descripción', colDesc + colDescW/2, textY, { align:'center' });
+
+      y = top + headerH;
+    }
+
+    // Dibuja el resumen de un día puntual, igual que el panel "Resumen" de la app
+    function dibujarResumenDia(datosDia, fecha){
+      const c = calcularBloque(datosDia);
+      const gH = gananciaHorasDia(fecha);
+      const domisCount = datosDia.filter(e=>e.tipo !== 'extra').length;
+      const boxH = 128;
+
+      espacioDisponible(boxH + 18);
+      doc.setDrawColor(222,224,229); doc.setLineWidth(1);
+      doc.roundedRect(marginX, y, tableRight - marginX, boxH, 8, 8);
+
+      let by = y + 22;
+      doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(...DARK);
+      doc.text('Resumen del día', marginX + 16, by);
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(...GRAY);
+      doc.text(`${domisCount} Domis`, tableRight - 16, by, { align:'right' });
+      by += 20;
+
+      const filas = [
+        ['Efectivo:', fmt(c.efectivo), APP_GREEN],
+        ['Transfe:', fmt(c.transfe), RED],
+        ['Realizó:', fmt(c.realizo), DARK],
+        ['Horas:', fmt(gH), APP_BLUE],
+        ['Ganado:', fmt(c.ganado + gH), APP_VIOLET],
+      ];
+      doc.setFontSize(12);
+      filas.forEach(([k,v,col])=>{
+        doc.setFont('helvetica','normal'); doc.setTextColor(60,64,72);
+        doc.text(k, marginX + 16, by);
+        doc.setFont('helvetica','bold'); doc.setTextColor(...col);
+        doc.text(v, tableRight - 16, by, { align:'right' });
+        by += 17;
+      });
+
+      y += boxH + 22;
+    }
+
+    let huboAlgunDia = false;
+    let primerDiaDibujado = false;
+
+    dates.forEach(d=>{
+      const ymd = toYMD(d);
+      const entradasDia = cargarEntradas().filter(e=>e.fecha===ymd).slice().reverse(); // orden cronológico
+      if(entradasDia.length === 0) return;
+
+      // Cada día nuevo empieza al principio de una página (el primero continúa
+      // justo debajo del encabezado, ya que la página 1 recién comienza).
+      if(primerDiaDibujado){ nuevaPagina(); }
+      primerDiaDibujado = true;
+      huboAlgunDia = true;
+
+      const idxSemana = (d.getDay()+6)%7;
+      const horasDia = horasDelDia(ymd);
+
+      const yTop = y;
+      // Nombre del día + fecha, con el MISMO formato que usa la cabecera de la app
+      doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(...DARK);
+      doc.text(DIA_NOMBRE[idxSemana], marginX, yTop);
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(...GRAY);
+      doc.text(fechaAppFormato(d), marginX, yTop + 15);
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(11.5); doc.setTextColor(...GRAY);
+      const horasLbl = 'Horas laborales:';
+      const horasLblW = doc.getTextWidth(horasLbl);
+      doc.text(horasLbl, tableRight - horasLblW - 26, yTop);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...DARK);
+      doc.text(String(horasDia), tableRight, yTop, { align:'right' });
+      y = yTop + 30;
+
+      dibujarEncabezadoTabla();
+
+      entradasDia.forEach((it, i)=>{
+        const lineas = [fmt(it.valor)];
+        if(it.tipo === 'transferencia' && it.valorProducto){
+          lineas.push(fmt(it.valorProducto) + ' - producto');
+        }
+        const lineH = 13;
+        const rowH = Math.max(26, lineas.length * lineH + 14); // padding para que el texto no toque los bordes
+
+        if(espacioDisponible(rowH)){
+          dibujarEncabezadoTabla();
+        }
+
+        const top = y;
+
+        // Fondo alterno (filas impares) dibujado antes que los bordes
+        if(i % 2 === 1){
+          doc.setFillColor(244,245,247);
+          doc.rect(marginX, top, tableRight - marginX, rowH, 'F');
+        }
+
+        // Marco completo de la fila + divisores de columna
+        doc.setDrawColor(215,217,222); doc.setLineWidth(0.7);
+        doc.rect(marginX, top, tableRight - marginX, rowH, 'S');
+        doc.line(colValor, top, colValor, top + rowH);
+        doc.line(colDesc, top, colDesc, top + rowH);
+
+        const centerY = top + rowH/2;
+
+        doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(...DARK);
+        doc.text(String(i + 1), colN + colNW/2, centerY + 4, { align:'center' });
+
+        const color = it.tipo === 'transferencia' ? RED : it.tipo === 'extra' ? BLUE_TABLA : BLACK;
+        doc.setTextColor(...color);
+        const bloqueH = lineas.length * lineH;
+        let baseY = centerY - bloqueH/2 + lineH - 3;
+        lineas.forEach((linea, li)=>{
+          doc.setFont('helvetica','bold'); doc.setFontSize(li === 0 ? 11.5 : 10);
+          doc.text(linea, colValor + 8, baseY + li * lineH);
+        });
+
+        doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(60,64,72);
+        doc.text(it.comentario || '', colDesc + colDescW/2, centerY + 4, { align:'center' });
+
+        y = top + rowH;
+      });
+
+      y += 16;
+      // Resumen del día, justo al terminar la tabla de ese día
+      dibujarResumenDia(entradasDia, ymd);
+    });
+
+    if(!huboAlgunDia){
+      doc.setFont('helvetica','normal'); doc.setFontSize(13); doc.setTextColor(...GRAY);
+      doc.text('No hay domicilios registrados esta semana.', marginX, y);
+      y += 30;
+    }
+
+    // ---- Resumen semanal (igual que el modal "Resumen semanal" de la app) ----
+    espacioDisponible(230);
+    doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(...DARK);
+    doc.text('Resumen semanal', marginX, y);
+    y += 34;
+
+    const c = calcularBloque(entradasSemana);
+    const horasSemana = horasDeFechas(fechasYMD);
+    const gananciaHorasSemana = horasSemana * getPrecioHora();
+    const saldoTotal = c.saldo + gananciaHorasSemana;
+
+    let saldoColor = DARK, saldoDesc = 'Cuentas saldadas esta semana';
+    if(Math.abs(saldoTotal) >= 1){
+      if(saldoTotal > 0){ saldoColor = APP_GREEN; saldoDesc = 'La empresa de los Runners te debe'; }
+      else { saldoColor = RED; saldoDesc = 'Le debes a la empresa de los Runners'; }
+    }
+    doc.setFont('helvetica','bold'); doc.setFontSize(32); doc.setTextColor(...saldoColor);
+    doc.text(fmt(Math.abs(saldoTotal)), pageW/2, y, { align:'center' });
+    y += 22;
+    doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...GRAY);
+    doc.text(saldoDesc, pageW/2, y, { align:'center' });
+    y += 30;
+
+    doc.setDrawColor(222,224,229); doc.setLineWidth(0.8);
+    doc.line(marginX, y, tableRight, y);
+    y += 26;
+
+    const filasSemana = [
+      ['Efectivo cobrado:', fmt(c.efectivo), APP_GREEN],
+      ['Transferencias:', fmt(c.transfe), RED],
+      ['Producto (transf.):', fmt(c.producto), DARK],
+      ['Extras recibidos:', fmt(c.extra), APP_BLUE],
+      ['Total realizado:', fmt(c.realizo), DARK],
+      ['Horas laborales:', fmt(gananciaHorasSemana), APP_BLUE],
+      ['Total ganado:', fmt(c.ganado + gananciaHorasSemana), APP_VIOLET],
+    ];
+    filasSemana.forEach(([k,v,col], idx)=>{
+      espacioDisponible(24);
+      doc.setFont('helvetica','normal'); doc.setFontSize(13); doc.setTextColor(60,64,72);
+      doc.text(k, marginX, y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...col);
+      doc.text(v, tableRight, y, { align:'right' });
+      y += 16;
+      if(idx < filasSemana.length - 1){
+        doc.setDrawColor(235,236,239); doc.setLineWidth(0.6);
+        doc.line(marginX, y, tableRight, y);
+      }
+      y += 12;
+    });
+
+    const nombreArchivo = `Runners_semana_${toYMD(monday)}.pdf`;
+    doc.save(nombreArchivo);
+    toast('Listado semanal', '¡PDF GENERADO!');
+  }
+
+  document.getElementById('menuPDF').addEventListener('click', ()=>{
+    document.getElementById('menuDropdown').classList.remove('open');
+    generarListadoPDF();
+  });
+
   initOnboarding();
   initSelectedDate();
+  actualizarEstiloGuardar();
   renderAll();
 
   if('serviceWorker' in navigator){
