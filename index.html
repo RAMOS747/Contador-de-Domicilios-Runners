@@ -170,6 +170,9 @@
   .tipo-toggle button.active[data-tipo="extra"]{ background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
 
   .field-row{ display:flex; gap: 10px; margin-bottom: 12px; }
+  /* El espacio de "Valor Producto" queda siempre reservado (sin animación) para que
+     el resto de la tarjeta no se mueva al cambiar entre tipos */
+  #productoField.oculto{ visibility: hidden; pointer-events: none; }
   .field{ flex:1; }
   .field label{ font-size: 12px; color: var(--text-dim); display:block; margin-bottom: 5px; }
   .field input{
@@ -184,7 +187,7 @@
   }
   .guardar-btn:active{ transform: scale(.98); }
   /* Colores del botón "Guardar" según el tipo de domicilio seleccionado en el toggle */
-  .guardar-btn.tipo-efectivo{ background: #0b0c0f; border: 1px solid #3a3f4b; color:#fff; }
+  .guardar-btn.tipo-efectivo{ background: #eef0f3; border: 1px solid #0b0c0f; color:#0b0c0f; }
   .guardar-btn.tipo-transferencia{ background: var(--red); color:#fff; }
   .guardar-btn.tipo-extra{ background: var(--blue); color:#fff; }
 
@@ -279,7 +282,7 @@
   <div class="ob-card">
     <div class="logo">Runners<span>.</span></div>
     <p>¿Cómo te llamas?</p>
-    <input type="text" id="obNombre" placeholder="Tu nombre" maxlength="30">
+    <input type="text" id="obNombre" placeholder="Tu nombre" maxlength="30" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" name="ob-nombre-campo">
     <button id="obBtn">Comenzar</button>
   </div>
 </div>
@@ -317,19 +320,19 @@
     <div class="field-row" id="valorRow">
       <div class="field" id="valorField">
         <label id="valorLabel">Valor Domi</label>
-        <input type="text" id="valor" class="money-input" inputmode="numeric" placeholder="0">
+        <input type="text" id="valor" class="money-input" inputmode="numeric" placeholder="0" autocomplete="off" autocorrect="off" spellcheck="false" name="valor-domi-campo">
       </div>
     </div>
-    <div class="field-row" id="productoField" style="display:none;">
+    <div class="field-row oculto" id="productoField">
       <div class="field">
         <label>Valor Producto</label>
-        <input type="text" id="valorProducto" class="money-input" inputmode="numeric" placeholder="0">
+        <input type="text" id="valorProducto" class="money-input" inputmode="numeric" placeholder="0" autocomplete="off" autocorrect="off" spellcheck="false" name="valor-producto-campo">
       </div>
     </div>
     <div class="field-row">
       <div class="field">
         <label>Comentario "Opcional"</label>
-        <input type="text" id="comentario" placeholder="Ej: Carrera 13.4.35">
+        <input type="text" id="comentario" placeholder="Ej: Carrera 13.4.35" autocomplete="off" autocorrect="off" spellcheck="false" name="comentario-campo">
       </div>
     </div>
 
@@ -396,7 +399,7 @@
     <div class="modal-top"><h3>Configurar porcentaje</h3><button class="close" data-close="modalConfig">✕</button></div>
     <div class="config-field">
       <label>Porcentaje que le pertenece al domiciliario (%)</label>
-      <input type="number" id="pctWorkerInput" min="0" max="100">
+      <input type="number" id="pctWorkerInput" min="0" max="100" autocomplete="off" name="pct-worker-campo">
       <div class="config-split">
         <span>Domiciliario: <b id="pctWorkerShow">70%</b></span>
         <span>Empresa: <b id="pctEmpresaShow">30%</b></span>
@@ -418,11 +421,11 @@
     <div id="horasFecha" style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">—</div>
     <div class="config-field">
       <label>Precio por hora (COP)</label>
-      <input type="text" id="precioHoraInput" class="money-input" inputmode="numeric" placeholder="0">
+      <input type="text" id="precioHoraInput" class="money-input" inputmode="numeric" placeholder="0" autocomplete="off" autocorrect="off" spellcheck="false" name="precio-hora-campo">
     </div>
     <div class="config-field">
       <label>Horas trabajadas este día</label>
-      <input type="number" id="horasInput" min="0" step="0.5" inputmode="decimal" placeholder="0">
+      <input type="number" id="horasInput" min="0" step="0.5" inputmode="decimal" placeholder="0" autocomplete="off" name="horas-campo">
     </div>
     <div class="config-split">
       <span>Total del día:</span>
@@ -451,7 +454,6 @@
 <div class="toast" id="toast"></div>
 
 <!-- Librería para generar el PDF del listado semanal, se ejecuta en el navegador del usuario -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   // ==========================================================================
   // ALMACENAMIENTO (localStorage)
@@ -652,9 +654,9 @@
       tipoSeleccionado = btn.dataset.tipo;
       const valorLabel = document.getElementById('valorLabel');
       const productoField = document.getElementById('productoField');
-      if(tipoSeleccionado === 'efectivo'){ valorLabel.textContent = 'Valor Domi'; productoField.style.display = 'none'; }
-      else if(tipoSeleccionado === 'transferencia'){ valorLabel.textContent = 'Valor Domi'; productoField.style.display = 'block'; }
-      else { valorLabel.textContent = 'Valor Extra'; productoField.style.display = 'none'; }
+      if(tipoSeleccionado === 'efectivo'){ valorLabel.textContent = 'Valor Domi'; productoField.classList.add('oculto'); }
+      else if(tipoSeleccionado === 'transferencia'){ valorLabel.textContent = 'Valor Domi'; productoField.classList.remove('oculto'); }
+      else { valorLabel.textContent = 'Valor Extra'; productoField.classList.add('oculto'); }
       actualizarEstiloGuardar();
     });
   });
@@ -722,7 +724,7 @@
     document.querySelector(`.tipo-toggle button[data-tipo="${item.tipo}"]`).classList.add('active');
     tipoSeleccionado = item.tipo;
     document.getElementById('valorLabel').textContent = item.tipo === 'extra' ? 'Valor Extra' : 'Valor Domi';
-    document.getElementById('productoField').style.display = item.tipo === 'transferencia' ? 'block' : 'none';
+    document.getElementById('productoField').classList.toggle('oculto', item.tipo !== 'transferencia');
     setMoneyValue(document.getElementById('valor'), item.valor);
     setMoneyValue(document.getElementById('valorProducto'), item.valorProducto);
     document.getElementById('comentario').value = item.comentario || '';
@@ -976,7 +978,30 @@
   // Colores de la tabla: Transferencia = rojo, Efectivo = negro, Extra = azul.
   // Colores de los resúmenes: los mismos que usa la app (verde/azul/violeta/ámbar).
   // ==========================================================================
-  function generarListadoPDF(){
+  // Carga jsPDF solo la primera vez que se necesita (al generar un PDF),
+  // en vez de al abrir la app. Así el arranque de la app (onboarding, botones,
+  // etc.) nunca depende de tener internet disponible.
+  let _jsPDFLoading = null;
+  function cargarJsPDF(){
+    if(window.jspdf) return Promise.resolve();
+    if(_jsPDFLoading) return _jsPDFLoading;
+    _jsPDFLoading = new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = ()=> resolve();
+      s.onerror = ()=> reject(new Error('No se pudo cargar jsPDF'));
+      document.head.appendChild(s);
+    });
+    return _jsPDFLoading;
+  }
+
+  async function generarListadoPDF(){
+    try{
+      await cargarJsPDF();
+    }catch(e){
+      toast('No se pudo generar el PDF', 'Revisa tu conexión a internet');
+      return;
+    }
     if(!window.jspdf){
       toast('No se pudo generar el PDF', 'Revisa tu conexión a internet');
       return;
